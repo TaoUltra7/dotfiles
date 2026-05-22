@@ -45,12 +45,11 @@ cask "zoom"
 
 # Mac App Store
 mas "GoodNotes", id: 1444383602
-mas "Keynote", id: 409183694
+mas "Keynote", id: 361285480
 mas "LINE", id: 539883307
 mas "Messenger", id: 1480068668
-mas "Numbers", id: 409203825
-mas "Pages", id: 409201541
-mas "Shazam", id: 897118787
+mas "Numbers", id: 361304891
+mas "Pages", id: 361309726
 mas "Slack", id: 803453959
 mas "Telegram", id: 747648890
 mas "WeChat", id: 836500024
