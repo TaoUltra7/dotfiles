@@ -20,7 +20,6 @@ echo "🍎 Updating Mac App Store apps…"
 mas upgrade
 '
 
-
 # --------------------
 # Directories
 # --------------------
