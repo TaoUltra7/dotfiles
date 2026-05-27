@@ -147,7 +147,6 @@ for app in \
   "/Applications/Claude" \
   "/Applications/iTerm" \
   "/Applications/Visual Studio Code" \
-  "/Applications/GitHub Desktop" \
   "/System/Applications/App Store" \
   "/System/Applications/iPhone Mirroring" \
   "/System/Applications/System Settings"; do
