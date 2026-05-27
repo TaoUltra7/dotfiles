@@ -27,6 +27,213 @@ mas upgrade
 alias dotfiles="cd $DOTFILES && code ."
 
 # --------------------
+# Git
+# --------------------
+
+gitstatus() {
+  emulate -L zsh
+  setopt local_options extended_glob
+
+  local RESET=$'\e[0m' BOLD=$'\e[1m' DIM=$'\e[2m'
+  local RED=$'\e[31m' GREEN=$'\e[32m' YELLOW=$'\e[33m'
+  local MAGENTA=$'\e[35m' CYAN=$'\e[36m'
+
+  if [[ "$1" == "-h" || "$1" == "--help" ]]; then
+    cat <<-EOF
+	${BOLD}gitstatus${RESET} [-f|--fetch] [path]   show all git repos under <path> (default: .)
+
+	${BOLD}Options${RESET}
+	  -f, --fetch   run \`git fetch --prune\` in each repo first (parallel, network)
+
+	${BOLD}Row marker${RESET}
+	  ${YELLOW}*${RESET}   current local branch
+	      other local branch
+	  ${CYAN}↗${RESET}   remote-only branch (no local tracking)
+
+	${BOLD}Working tree${RESET} (current branch only)
+	  ${GREEN}✓${RESET}    clean
+	  ${GREEN}✚N${RESET}   N staged changes
+	  ${YELLOW}✗N${RESET}   N unstaged modifications
+	  ${RED}?N${RESET}   N untracked files
+
+	${BOLD}Tracking${RESET}
+	  ${GREEN}↑N${RESET}            N commits ahead of upstream
+	  ${YELLOW}↓N${RESET}            N commits behind upstream
+	  ${DIM}=${RESET}             in sync with upstream
+	  ${RED}gone${RESET}          upstream branch was deleted
+	  ${MAGENTA}no-upstream${RESET}   local-only, never pushed
+	  ${CYAN}remote-only${RESET}   exists on remote, no local checkout
+
+	${BOLD}Header${RESET}: ${CYAN}●${RESET} ${BOLD}repo-name${RESET}  ${DIM}~/path/to/repo · host/user/repo${RESET}
+	${BOLD}Last column${RESET}: relative age of branch's HEAD commit.
+	EOF
+    return 0
+  fi
+
+  local do_fetch=0
+  if [[ "$1" == "-f" || "$1" == "--fetch" ]]; then
+    do_fetch=1
+    shift
+  fi
+
+  local root="${1:-.}"
+
+  if (( do_fetch )); then
+    local repo_count
+    repo_count=$(find "$root" -name .git -type d -prune 2>/dev/null | wc -l | tr -d ' ')
+    print -u2 -- "${DIM}Fetching ${repo_count} repos in parallel…${RESET}"
+    find "$root" -name .git -type d -prune -print0 2>/dev/null \
+      | xargs -0 -P 16 -n 1 sh -c \
+        'd="$1"; git -C "${d%/.git}" fetch --prune --quiet 2>/dev/null' _
+  fi
+
+  # Function-scoped vars (declared once to avoid zsh `local` re-declaration printing).
+  local d repo repo_name current remote_url pretty_path
+  local staged modified untracked wt
+  local branch upstream track age symref
+  local is_current marker bcolor trk ahead behind sa wt_cell
+  local wtparts tparts
+  local -A tracked
+
+  # Pad a string (possibly containing ANSI escapes) to visible width
+  _gs_pad() {
+    local s="$1" w="$2"
+    local plain="${s//$'\e'\[[0-9;]#m/}"
+    print -rn -- "$s"
+    local pad=$(( w - ${#plain} ))
+    (( pad > 0 )) && printf "%${pad}s" ""
+  }
+
+  # Compact relative age: "3 days ago" -> "3d", "2 weeks, 1 day ago" -> "2w"
+  _gs_age() {
+    REPLY="${1% ago}"
+    REPLY="${REPLY%%,*}"
+    REPLY="${REPLY// years/y}";   REPLY="${REPLY// year/y}"
+    REPLY="${REPLY// months/mo}"; REPLY="${REPLY// month/mo}"
+    REPLY="${REPLY// weeks/w}";   REPLY="${REPLY// week/w}"
+    REPLY="${REPLY// days/d}";    REPLY="${REPLY// day/d}"
+    REPLY="${REPLY// hours/h}";   REPLY="${REPLY// hour/h}"
+    REPLY="${REPLY// minutes/m}"; REPLY="${REPLY// minute/m}"
+    REPLY="${REPLY// seconds/s}"; REPLY="${REPLY// second/s}"
+    [[ "$REPLY" == "just now" ]] && REPLY="now"
+  }
+
+  find "$root" -name .git -type d -prune 2>/dev/null | sort | while read -r d; do
+    repo=${d:h:A}
+    repo_name=${repo:t}
+    current=$(git -C "$repo" symbolic-ref --short HEAD 2>/dev/null || echo "")
+    pretty_path="${repo/#$HOME/~}"
+
+    # Remote URL — prefer origin, fall back to first remote; normalize to host/user/repo
+    remote_url=$(git -C "$repo" remote get-url origin 2>/dev/null \
+      || git -C "$repo" remote get-url "$(git -C "$repo" remote 2>/dev/null | head -n1)" 2>/dev/null)
+    if [[ -n "$remote_url" ]]; then
+      remote_url="${remote_url%.git}"
+      remote_url="${remote_url#https://}"
+      remote_url="${remote_url#http://}"
+      remote_url="${remote_url#ssh://}"
+      remote_url="${remote_url#git://}"
+      remote_url="${remote_url#git@}"
+      remote_url="${remote_url/://}"     # git@host:user/repo -> host/user/repo
+    else
+      remote_url="${RED}(no remote)${RESET}${DIM}"
+    fi
+
+    # Working-tree state (applies to current branch only)
+    staged=$(git -C "$repo" diff --cached --numstat 2>/dev/null | wc -l | tr -d ' ')
+    modified=$(git -C "$repo" diff --numstat 2>/dev/null | wc -l | tr -d ' ')
+    untracked=$(git -C "$repo" ls-files --others --exclude-standard 2>/dev/null | wc -l | tr -d ' ')
+    wtparts=()
+    (( staged    > 0 )) && wtparts+=("${GREEN}✚${staged}${RESET}")
+    (( modified  > 0 )) && wtparts+=("${YELLOW}✗${modified}${RESET}")
+    (( untracked > 0 )) && wtparts+=("${RED}?${untracked}${RESET}")
+    if (( ${#wtparts} == 0 )); then
+      wt="${GREEN}✓${RESET}"
+    else
+      wt="${(j: :)wtparts}"
+    fi
+
+    # Repo header
+    printf "%s●%s %s%s%s  %s%s · %s%s\n" \
+      "$CYAN" "$RESET" "$BOLD" "$repo_name" "$RESET" \
+      "$DIM" "$pretty_path" "$remote_url" "$RESET"
+
+    # Walk all local branches, most-recent commit first
+    git -C "$repo" for-each-ref \
+      --sort=-committerdate \
+      --format='%(refname:short)|%(upstream:short)|%(upstream:track)|%(committerdate:relative)' \
+      refs/heads/ 2>/dev/null | while IFS='|' read -r branch upstream track age; do
+
+      is_current=0; marker=" "; bcolor=""
+      if [[ "$branch" == "$current" ]]; then
+        is_current=1; marker="*"; bcolor="$YELLOW$BOLD"
+      fi
+
+      # Tracking cell
+      trk=""
+      if [[ -z "$upstream" ]]; then
+        trk="${MAGENTA}no-upstream${RESET}"
+      elif [[ "$track" == *gone* ]]; then
+        trk="${RED}gone${RESET}"
+      else
+        ahead=0; behind=0
+        [[ "$track" =~ 'ahead ([0-9]+)' ]] && ahead=$match[1]
+        [[ "$track" =~ 'behind ([0-9]+)' ]] && behind=$match[1]
+        tparts=()
+        (( ahead  > 0 )) && tparts+=("${GREEN}↑${ahead}${RESET}")
+        (( behind > 0 )) && tparts+=("${YELLOW}↓${behind}${RESET}")
+        if (( ${#tparts} > 0 )); then
+          trk="${(j: :)tparts}"
+        else
+          trk="${DIM}=${RESET}"
+        fi
+      fi
+
+      _gs_age "$age"; sa="$REPLY"
+
+      wt_cell=""
+      (( is_current )) && wt_cell="$wt"
+
+      print -rn -- "  ${YELLOW}${marker}${RESET} "
+      _gs_pad "${bcolor}${branch}${RESET}" 28
+      print -rn -- " "
+      _gs_pad "$wt_cell" 12
+      print -rn -- " "
+      _gs_pad "$trk" 12
+      print -rn -- " "
+      printf "%s%s%s\n" "$DIM" "$sa" "$RESET"
+    done
+
+    # Remote-only branches (no local branch tracks them)
+    tracked=()
+    git -C "$repo" for-each-ref --format='%(upstream:short)' refs/heads/ 2>/dev/null \
+      | while read -r upstream; do
+          [[ -n "$upstream" ]] && tracked[$upstream]=1
+        done
+
+    git -C "$repo" for-each-ref --sort=-committerdate \
+      --format='%(refname:short)|%(symref)|%(committerdate:relative)' refs/remotes/ 2>/dev/null \
+      | while IFS='|' read -r branch symref age; do
+        [[ -n "$symref" ]] && continue   # skip symbolic refs (e.g. origin/HEAD)
+        [[ -n "${tracked[$branch]}" ]] && continue
+        _gs_age "$age"; sa="$REPLY"
+
+        print -rn -- "  ${CYAN}↗${RESET} "
+        _gs_pad "${CYAN}${branch}${RESET}" 28
+        print -rn -- " "
+        _gs_pad "" 12
+        print -rn -- " "
+        _gs_pad "${CYAN}remote-only${RESET}" 12
+        print -rn -- " "
+        printf "%s%s%s\n" "$DIM" "$sa" "$RESET"
+      done
+    echo
+  done
+
+  unfunction _gs_pad _gs_age 2>/dev/null
+}
+
+# --------------------
 # JS
 # --------------------
 alias nfresh="rm -rf node_modules/ package-lock.json && npm install"
