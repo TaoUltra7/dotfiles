@@ -238,47 +238,6 @@ gitstatus() {
 alias nfresh="rm -rf node_modules/ package-lock.json && npm install"
 alias nupdate="ncu -u && npm update"
 
-# --------------------
-# Computer vision
-# --------------------
-play() {
-    local framerate="${1:-64}"            # default: 64 if no arg
-    local pattern="${2:-frame_%010d.jpg}" # default pattern if not provided
-    ffplay -framerate "$framerate" -i "$pattern"
-}
-
-trim_png() {
-    # Usage: trim_png input.png output.png
-    if [ $# -ne 2 ]; then
-        echo "Usage: trim_png <input.png> <output.png>"
-        return 1
-    fi
-    magick "$1" -trim +repage "$2"
-}
-
-mp4_to_gif() {
-    # Usage: mp4_to_gif <input.mp4> [fps] [width]
-    local input="$1" fps="${2:-}" width="${3:-}"
-    [[ -z "$input" ]] && { echo "Usage: mp4_to_gif <input.mp4> [fps] [width]"; return 1; }
-
-    local output="${input:r}.gif"
-    local palette="/tmp/mp4_to_gif_palette_$$.png"
-    local scale=""
-
-    [[ -z "$fps" ]] && fps=$(ffprobe -v error -select_streams v:0 \
-        -show_entries stream=r_frame_rate \
-        -of default=noprint_wrappers=1:nokey=1 "$input" | bc)
-    (( fps > 30 )) && fps=30
-
-    [[ -n "$width" ]] && scale=",scale=$width:-1:flags=lanczos"
-
-    ffmpeg -i "$input" -vf "fps=$fps${scale},palettegen" -y "$palette" &&
-    ffmpeg -i "$input" -i "$palette" \
-        -filter_complex "[0:v]fps=$fps${scale}[v];[v][1:v]paletteuse" \
-        -loop 0 -y "$output"
-    rm -f "$palette"
-}
-
 # ---------------------
 # Virtual environment
 # ---------------------

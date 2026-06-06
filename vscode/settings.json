@@ -4,9 +4,7 @@
   "workbench.iconTheme": "material-icon-theme",
   "workbench.editorAssociations": {
     "*.ipynb": "jupyter-notebook",
-    "*.pdf": "latex-workshop-pdf-hook",
   },
-  "workbench.sideBar.location": "right",
   "workbench.secondarySideBar.defaultVisibility": "hidden",
   "editor.formatOnSave": true,
   "editor.bracketPairColorization.enabled": true,
@@ -71,13 +69,6 @@
     "capitalisation.identifiers",
   ],
   "sqlfluff.dialect": "ansi",
-  // LaTeX settings
-  "latex-workshop.view.pdf.viewer": "tab",
-  "latex-workshop.latex.autoClean.run": "onBuilt",
-  "latex-workshop.formatting.latex": "latexindent",
-  "[latex]": {
-    "editor.defaultFormatter": "James-Yu.latex-workshop",
-  },
   // Git settings
   "git.autofetch": true,
   "git.confirmSync": false,
@@ -102,5 +93,4 @@
   },
   "gitlens.ai.model": "vscode",
   "gitlens.ai.vscode.model": "copilot:gpt-4.1",
-  "atlascode.jira.enabled": true,
 }

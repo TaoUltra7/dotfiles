@@ -107,7 +107,6 @@ link "$HOME/.dotfiles/claude/skills" "$HOME/.claude/skills"
 
 # Others
 link "$HOME/.dotfiles/tmux/.tmux.conf" "$HOME/.tmux.conf"
-link "$HOME/.dotfiles/haskell/.ghci" "$HOME/.ghci"
 
 # --------------------
 # Install applications
@@ -128,7 +127,6 @@ source "$HOME/.dotfiles/terminal/install.sh"
 source "$HOME/.dotfiles/tmux/install.sh"
 source "$HOME/.dotfiles/javascript/install.sh"
 source "$HOME/.dotfiles/python/install.sh"
-source "$HOME/.dotfiles/rust/install.sh"
 
 # --------------------
 # macOS settings

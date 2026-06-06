@@ -61,17 +61,7 @@
   "enabledPlugins": {
     "code-review@claude-plugins-official": true,
     "commit-commands@claude-plugins-official": true,
-    "notifications@cc-marketplace": true,
-    "skills-toolkit@cc-marketplace": true,
     "frontend-design@claude-plugins-official": true
-  },
-  "extraKnownMarketplaces": {
-    "cc-marketplace": {
-      "source": {
-        "source": "git",
-        "url": "git@github.com:Edvent-AI/cc-marketplace.git"
-      }
-    }
   },
   "tui": "fullscreen",
   "skipAutoPermissionPrompt": true

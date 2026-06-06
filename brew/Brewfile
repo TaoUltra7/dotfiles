@@ -1,12 +1,7 @@
 # Brew
-brew "cabal-install" # Haskell package manager
-brew "ffmpeg" # convert video formats, frames to video, record, and stream
 brew "gh" # GitHub CLI
-brew "ghc" # Haskell compiler
 brew "git-lfs" # Git extension for versioning large files
 brew "git"
-brew "go"
-brew "golangci-lint" # linter for Go
 brew "htop"
 brew "imagemagick"
 brew "mas"
@@ -14,7 +9,6 @@ brew "mysql"
 brew "node"
 brew "openjdk"
 brew "pre-commit" # managing and maintaining pre-commit hooks
-brew "rustup"
 brew "shellcheck" # static analysis tool for shell scripts
 brew "tmux" # terminal multiplexer
 brew "tree"
@@ -22,34 +16,21 @@ brew "uv" # modern python project manager
 brew "wget" # allow non-GUI file download from the web
 
 # Cask
-cask "anki"
 cask "blender"
-cask "calibre"
 cask "claude-code"
 cask "claude"
-cask "dbeaver-community"
-cask "discord"
 cask "docker-desktop"
-cask "figma"
+cask "github"
 cask "google-chrome"
 cask "google-drive"
 cask "iterm2"
-cask "mactex-no-gui"
-cask "microsoft-teams"
-cask "obsidian"
-cask "postman"
-cask "steam"
 cask "visual-studio-code"
-cask "zoom"
 
 # Mac App Store
 mas "GoodNotes", id: 1444383602
 mas "Keynote", id: 361285480
 mas "LINE", id: 539883307
-mas "Messenger", id: 1480068668
 mas "Numbers", id: 361304891
 mas "Pages", id: 361309726
-mas "Slack", id: 803453959
-mas "Telegram", id: 747648890
 mas "WeChat", id: 836500024
 mas "WhatsApp", id: 310633997
