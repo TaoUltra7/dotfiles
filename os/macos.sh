@@ -137,16 +137,11 @@ defaults write com.apple.dock persistent-apps -array
 
 for app in \
   "/System/Applications/Apps" \
-  "/System/Volumes/Preboot/Cryptexes/App/System/Applications/Safari" \
   "/Applications/Google Chrome" \
   "/Applications/LINE" \
   "/Applications/WhatsApp" \
-  "/Applications/Slack" \
-  "/Applications/Microsoft Teams" \
   "/System/Applications/FaceTime" \
   "/Applications/Claude" \
-  "/Applications/iTerm" \
-  "/Applications/Visual Studio Code" \
   "/System/Applications/App Store" \
   "/System/Applications/iPhone Mirroring" \
   "/System/Applications/System Settings"; do
